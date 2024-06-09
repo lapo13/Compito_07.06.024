@@ -3,98 +3,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 import static java.lang.Thread.sleep;
-
-public class Main {
-    public static void main(String[] args) {
-        int L = 10;
-        int N = 4;
-        int M =3; // nel codice consegnato è riferito come W
-        int X = 200;
-        int T = 100+(X*M); // questa relazione è  stata introdotta per far terminare il programma con dei valori nelle code
-        // essendo i processor più veloci nell'estrazione rispetto ai generatori
-
-        inputQueue[] queues = new inputQueue[N];
-        threadGenerator[] generators = new threadGenerator[N];
-        threadProcessor[] processors = new threadProcessor[M];
-        outputQueue output = new outputQueue(M);
-        threadPrinter printer = new threadPrinter(output);
-
-
-        for (int i = 0; i < N; i++) {
-            queues[i] = new inputQueue(L);
-            generators[i] = new threadGenerator(queues[i], i, X);
-        }
-
-        for (int i = 0; i < M; i++) {
-            processors[i] = new threadProcessor(queues, i, T, N, output);
-        }
-
-        for (int i = 0; i < N; i++) {
-            generators[i].start();
-        }
-
-        for (int i = 0; i < M; i++) {
-            processors[i].start();
-        }
-
-        printer.start();
-
-        try {
-            sleep(10000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        // sono stati raggruppati i for degli interrupt e join rispetto al codice consegnato
-
-        System.out.println("---------- Shutting down thread Generator ----------");
-
-        for (int i = 0; i < N; i++) {
-            try {
-                generators[i].interrupt();
-                generators[i].join();
-                System.out.println("****************************");
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        System.out.println("---------- Shutting down thread Processor ----------");
-
-        for (int i = 0; i < M; i++) {
-            try {
-                processors[i].interrupt();
-                processors[i].join();
-                System.out.println("****************************");
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        System.out.println("---------- Shutting down thread Printer ----------");
-        try{
-        printer.interrupt();
-            printer.join();
-        }catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        System.out.println("---------- End of the program ----------");
-    }
-}
-
-class results {
-    public int[] results;
-    public int sum;
-    public int extraction;
-
-    public results(int[] values, int sum, int extraction) {
-        this.results = values;
-        this.sum = sum;
-        this.extraction = extraction;
-    }
-}
-
 class threadGenerator extends Thread {
     private inputQueue uniqueQueue;
     private int threadID;
@@ -222,7 +130,7 @@ class threadProcessor extends Thread {
             total = ((completed*N) + remaining); // è stato modificato il calcolo rispetto al codice consegnato
             System.out.println("Thread " + threadID + " completed " + completed + " computations.");
             System.out.println("remaining values: " + remaining);
-            System.out.println("Total values coputed ad remaining: " + total);
+            System.out.println("Total values computed and remaining: " + total);
         }
     }
 }
@@ -299,5 +207,96 @@ class threadPrinter extends Thread {
             System.out.println("Thread Printer printed " + printed + " results.");
             System.out.println("Thread Printer interrupted.");
         }
+    }
+}
+
+class results {
+    public int[] results;
+    public int sum;
+    public int extraction;
+
+    public results(int[] values, int sum, int extraction) {
+        this.results = values;
+        this.sum = sum;
+        this.extraction = extraction;
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        int L = 10;
+        int N = 4;
+        int M =3; // nel codice consegnato è riferito come W
+        int X = 200;
+        int T = 100+(X*M); // questa relazione è  stata introdotta per far terminare il programma con dei valori nelle code
+        // essendo i processor più veloci nell'estrazione rispetto ai generatori
+
+        inputQueue[] queues = new inputQueue[N];
+        threadGenerator[] generators = new threadGenerator[N];
+        threadProcessor[] processors = new threadProcessor[M];
+        outputQueue output = new outputQueue(M);
+        threadPrinter printer = new threadPrinter(output);
+
+
+        for (int i = 0; i < N; i++) {
+            queues[i] = new inputQueue(L);
+            generators[i] = new threadGenerator(queues[i], i, X);
+        }
+
+        for (int i = 0; i < M; i++) {
+            processors[i] = new threadProcessor(queues, i, T, N, output);
+        }
+
+        for (int i = 0; i < N; i++) {
+            generators[i].start();
+        }
+
+        for (int i = 0; i < M; i++) {
+            processors[i].start();
+        }
+
+        printer.start();
+
+        try {
+            sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        // sono stati raggruppati i for degli interrupt e join rispetto al codice consegnato
+
+        System.out.println("---------- Shutting down thread Generator ----------");
+
+        for (int i = 0; i < N; i++) {
+            try {
+                generators[i].interrupt();
+                generators[i].join();
+                System.out.println("****************************");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        System.out.println("---------- Shutting down thread Processor ----------");
+
+        for (int i = 0; i < M; i++) {
+            try {
+                processors[i].interrupt();
+                processors[i].join();
+                System.out.println("****************************");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        System.out.println("---------- Shutting down thread Printer ----------");
+        try{
+            printer.interrupt();
+            printer.join();
+        }catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        System.out.println("---------- End of the program ----------");
     }
 }
