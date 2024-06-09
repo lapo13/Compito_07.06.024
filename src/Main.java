@@ -6,11 +6,12 @@ import static java.lang.Thread.sleep;
 
 public class Main {
     public static void main(String[] args) {
-        int L = 30;
+        int L = 10;
         int N = 4;
         int M =3; // nel codice consegnato è riferito come W
-        int T = 100;
-        int X = 500;
+        int X = 200;
+        int T = 100+(X*M); // questa relazione è  stata introdotta per far terminare il programma con dei valori nelle code
+        // essendo i processor più veloci nell'estrazione rispetto ai generatori
 
         inputQueue[] queues = new inputQueue[N];
         threadGenerator[] generators = new threadGenerator[N];
@@ -113,7 +114,7 @@ class threadGenerator extends Thread {
         try{
             while(true) {
                 val++;
-                if(uniqueQueue.add(val, threadID, genCount)==-1){
+                if(uniqueQueue.add(val)==-1){
                     throw new InterruptedException();
                 }
                 genCount++;
@@ -128,16 +129,20 @@ class threadGenerator extends Thread {
 
 class inputQueue {
     private ArrayList<Integer> queue;
+    private int size;
     public int elements = 0; // è stato aggiunto per tenere conto degli elementi nella coda
     // è stato rimosso il parametro size dal costruttore poiché non viene utilizzato
 
     public inputQueue(int size) {
         queue = new ArrayList<>(size);
+        this.size = size;
     }
 
-    public synchronized int add(int val, int id, int genCount) {
+    public synchronized int add(int val) { // è stato modificato il tipo di ritorno rispetto al codice consegnato
         try { // nel codice consegnato non c'era il try-catch
-            while (!queue.isEmpty()) {
+            while (queue.size() == size) { // è stato modificato il controllo rispetto al codice consegnato, in questo modo
+                // i generatori possono inserire dati finché la coda non è piena, nel compito invece
+                // i generatori dovevano aspettare che la coda si svuotasse
                 wait();
             }
             queue.add(val);
@@ -169,7 +174,7 @@ class inputQueue {
 class threadProcessor extends Thread {
     private inputQueue[] queues;
     private int threadID;
-    private int T, D, completed, remaining;
+    private int T, D, completed, remaining, total;
     private int extraction = 0;
     private int N;
     private outputQueue output;
@@ -187,6 +192,8 @@ class threadProcessor extends Thread {
     public void run() {
         try {
             while (true){
+                completed++; // è stato spostato qui rispetto al codice consegnato, poiché si perdeva il conto del
+                // numero di computazioni completate quando il thread veniva interrotto a metà computazione
                 int[] values = new int[N];
                 int sum = 0;
                 remaining = 0;
@@ -204,7 +211,6 @@ class threadProcessor extends Thread {
                 if ((output.add(res, threadID)) == -1){
                     throw new InterruptedException();
                 }
-                completed++;
             }
         }
         catch (InterruptedException e) {
@@ -212,15 +218,17 @@ class threadProcessor extends Thread {
                 remaining += queues[i].elements; // nella cosnsegna è presente un errore secondo cui si somma il valore di size
                 // è stato introdotto elements per tenere conto della dimensione delle code dinamicamente
             }
-            remaining += output.elements; //è stato aggiunto per tenere conto degli elementi nella coda di output, non presente nella consegna
+            remaining += output.elements;//è stato aggiunto per tenere conto degli elementi nella coda di output, non presente nella consegna
+            total = ((completed*N) + remaining); // è stato modificato il calcolo rispetto al codice consegnato
             System.out.println("Thread " + threadID + " completed " + completed + " computations.");
             System.out.println("remaining values: " + remaining);
+            System.out.println("Total values coputed ad remaining: " + total);
         }
     }
 }
 
 class outputQueue {
-    public LinkedList<results> queue;
+    private LinkedList<results> queue;
     private boolean[] acks;
     private int M;
     private int count;
@@ -232,7 +240,7 @@ class outputQueue {
         acks = new boolean[M];
     }
 
-    public synchronized int add(results res, int id) {
+    public synchronized int add(results res, int id) { // è stato modificato il tipo di ritorno rispetto al codice consegnato
         try{
             while (acks[id]){
                 wait();
