@@ -9,12 +9,14 @@ class threadGenerator extends Thread {
     private int val;
     private int X;
     private int genCount = 0;
+    private int N; // non presente nel codice consegnato
 
-    public threadGenerator(inputQueue uniqueQueue, int threadID, int sleepTime) {
+    public threadGenerator(inputQueue uniqueQueue, int threadID, int sleepTime, int N) {
         this.uniqueQueue = uniqueQueue;
         this.threadID = threadID;
         this.val = this.threadID;
         this.X = sleepTime;
+        this.N = N;
     }
 
     @Override
@@ -29,8 +31,14 @@ class threadGenerator extends Thread {
                 sleep(X);
             }
         }catch (InterruptedException e) {
+            if(threadID == 0) {// blocco if inserito per pulire l'output dato che i messaggi generati sono gli stessi per come sono stati implementati i generatori
+
+                System.out.println("Total generated values: " + genCount * N + " values."); // nel compito consegnato il totale
+                // è stato messo erroneamente nei thread processor e non nei generatori
+
+                System.out.println();
+            }
             System.out.println("Thread " + threadID + " generated " + genCount + " values.");
-            System.out.println("Thread " + threadID + " interrupted.");
         }
     }
 }
@@ -39,7 +47,6 @@ class inputQueue {
     private ArrayList<Integer> queue;
     private int size;
     public int elements = 0; // è stato aggiunto per tenere conto degli elementi nella coda
-    // è stato rimosso il parametro size dal costruttore poiché non viene utilizzato
 
     public inputQueue(int size) {
         queue = new ArrayList<>(size);
@@ -58,7 +65,8 @@ class inputQueue {
             notifyAll();
             return 0;
         } catch (InterruptedException e) {
-            return -1;
+            return -1; // è stato inserito per gestire l'interruzione del thread
+            //queando la coda è piena ed è in attesa
         }
     }
 
@@ -82,7 +90,7 @@ class inputQueue {
 class threadProcessor extends Thread {
     private inputQueue[] queues;
     private int threadID;
-    private int T, D, completed, remaining, total;
+    private int T, D, completed, remaining;
     private int extraction = 0;
     private int N;
     private outputQueue output;
@@ -122,15 +130,16 @@ class threadProcessor extends Thread {
             }
         }
         catch (InterruptedException e) {
-            for (int i = 0; i < N; i++) {
-                remaining += queues[i].elements; // nella cosnsegna è presente un errore secondo cui si somma il valore di size
-                // è stato introdotto elements per tenere conto della dimensione delle code dinamicamente
+            if (threadID == 0) {// è stato inserito per pulite l'output dato che le code sono comuni il risultato è lo stesso
+                for (int i = 0; i < N; i++) {
+                    remaining += queues[i].elements; // nella cosnsegna è presente un errore secondo cui si somma il valore di size
+                    // è stato introdotto elements per tenere conto della dimensione delle code dinamicamente
+                }
+                remaining += output.elements;//è stato aggiunto per tenere conto degli elementi nella coda di output, non presente nella consegna
+                System.out.println("remaining values in the queues: " + remaining);
+                System.out.println();
             }
-            remaining += output.elements;//è stato aggiunto per tenere conto degli elementi nella coda di output, non presente nella consegna
-            total = ((completed*N) + remaining); // è stato modificato il calcolo rispetto al codice consegnato
             System.out.println("Thread " + threadID + " completed " + completed + " computations.");
-            System.out.println("remaining values: " + remaining);
-            System.out.println("Total values computed and remaining: " + total);
         }
     }
 }
@@ -149,7 +158,7 @@ class outputQueue {
     }
 
     public synchronized int add(results res, int id) { // è stato modificato il tipo di ritorno rispetto al codice consegnato
-        try{
+        try{ // è stato aggiunto il try-catch
             while (acks[id]){
                 wait();
             }
@@ -160,12 +169,12 @@ class outputQueue {
             return 0;
         }catch (InterruptedException e) {
             return -1; // la funzione è stata modificata poiché il thread rimaneva bloccato qui
-            //inoltre si può seguire il flusso del codice consegnato
+            //inoltre si può seguire il flusso del codice consegnato, analogamente con la funzione add di inputQueue
         }
     }
 
     public synchronized results get(){
-        try {
+        try { // è stato aggiunto il try-catch
             while (queue.isEmpty()) {
                 wait();
             }
@@ -205,7 +214,6 @@ class threadPrinter extends Thread {
             }
         } catch (InterruptedException e) {
             System.out.println("Thread Printer printed " + printed + " results.");
-            System.out.println("Thread Printer interrupted.");
         }
     }
 }
@@ -240,7 +248,7 @@ public class Main {
 
         for (int i = 0; i < N; i++) {
             queues[i] = new inputQueue(L);
-            generators[i] = new threadGenerator(queues[i], i, X);
+            generators[i] = new threadGenerator(queues[i], i, X, N);
         }
 
         for (int i = 0; i < M; i++) {
@@ -265,7 +273,10 @@ public class Main {
 
         // sono stati raggruppati i for degli interrupt e join rispetto al codice consegnato
 
+        System.out.println();
+
         System.out.println("---------- Shutting down thread Generator ----------");
+        System.out.println();
 
         for (int i = 0; i < N; i++) {
             try {
@@ -276,8 +287,9 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }
-
+        System.out.println();
         System.out.println("---------- Shutting down thread Processor ----------");
+        System.out.println();
 
         for (int i = 0; i < M; i++) {
             try {
@@ -288,15 +300,16 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }
-
+        System.out.println();
         System.out.println("---------- Shutting down thread Printer ----------");
+        System.out.println();
         try{
             printer.interrupt();
             printer.join();
         }catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
+        System.out.println();
         System.out.println("---------- End of the program ----------");
     }
 }
