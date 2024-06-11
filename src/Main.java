@@ -2,7 +2,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import static java.lang.Thread.sleep;
+
+
 class threadGenerator extends Thread {
     private inputQueue uniqueQueue;
     private int threadID;
@@ -153,7 +154,7 @@ class outputQueue {
 
     public outputQueue(int M) {
         this.M = M;
-        queue = new LinkedList<results>();
+        queue = new LinkedList<>();
         acks = new boolean[M];
     }
 
@@ -236,7 +237,7 @@ public class Main {
         int N = 4;
         int M =3; // nel codice consegnato è riferito come W
         int X = 200;
-        int T = 100+(X*M); // questa relazione è  stata introdotta per far terminare il programma con dei valori nelle code
+        int T = X*M; // questa relazione è  stata introdotta per far terminare il programma con dei valori nelle code
         // essendo i processor più veloci nell'estrazione rispetto ai generatori
 
         inputQueue[] queues = new inputQueue[N];
@@ -266,7 +267,7 @@ public class Main {
         printer.start();
 
         try {
-            sleep(10000);
+            Thread.sleep(10000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
